@@ -7,25 +7,39 @@ use App\Http\Requests\RegisterUser;
 use App\Http\Requests\LogUserRequest;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Medecin;
+use App\Models\Patient;
 
 class UserController extends Controller
 {
     public function register(RegisterUser $request){
 
         try{
-            $user = new User();
-
-            $user->email = $request->email;
-            $user->numero = $request->numero;
-            $user->password = $request->password;
-
+            $user = new User([
+                "email" => $request->email,
+                "numero" => $request->numero,
+                "password" => $request->password,
+            ]);
             $user->save();
 
+            $patient = new Patient([
+                "nom" => $request->nom,
+                "prenom" => $request->prenom,
+                "sexe" => $request->sexe,
+                "age" => $request->age,
+                "userId" => $user->id,
+            ]);
+            $patient->save();
+
+            $result = User::join('patients','patients.userId','=','users.id')
+                    ->where('users.id',$user->id)
+                    ->select('users.*','patients.*')
+                    ->get();
 
             return response()->json([
                 'status_code' => 200,
                 'status_message' => 'Enrégistrement effectué avec succès ',
-                'user' => $user,
+                'user' => $result,
             ]);
          }
             catch(Exception $e){
